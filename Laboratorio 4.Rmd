@@ -1,0 +1,318 @@
+---
+title: "Laboratorio 4"
+author: "Daniel Arturo Lopez Sanchez"
+date: "11/3/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Problema 1
+Se tienen las resistencias de cables fabricados con 2 aleaciones distintas I y II (ver la tabla
+de abajo). Se quiere decidir si hay o no diferencia de las muestras, o sea, si proceden o
+no de la misma población. Además, determinar si hay diferencia respecto a la resistencia
+mediana entre los cables de las aleaciones I y II (supóngase α =0.05 para ambos casos).
+
+```{r, echo=TRUE}
+library(e1071)
+Aleacion1 <- c(18.3, 16.4, 22.7, 17.8, 18.9, 25.3, 16.1, 24.2)
+n1 <- length(Aleacion1)
+Aleacion2 <- c(12.6, 14.1, 20.5, 10.7, 15.9, 19.6, 12.9, 15.2, 11.8, 14.7)
+n2 <- length(Aleacion2)
+```
+Debido a que las muestras son independientes y de diferente tamaño, se usará una prueba de Mann Whitney Wilcoxon.
+
+Comprobando supuestos
+```{r, echo=TRUE}
+hist(Aleacion1)
+hist(Aleacion2)
+qqnorm(Aleacion1)
+qqnorm(Aleacion2)
+cat("Coeficiente de asimetria Aleacion 1:", skewness(Aleacion1), "\n",
+    "Coeficiente de Curtosis Aleacion 1:", kurtosis(Aleacion1))
+cat("Coeficiente de asimetria Aleacion 2:", skewness(Aleacion2), "\n",
+    "Coeficiente de Curtosis Aleacion 2:", kurtosis(Aleacion2))
+```
+
+Las muestras no parecen tener una forma idéntica por lo que no podemos hablar de medianas. Por esta razón las Hipótesis quedarán de la siguiente manera:
+
+HIPOTESIS
+  * H0: Las dos poblaciones son idénticas
+  * Ha: Las dos poblaciones no son idénticas
+
+Nuestro nivel de significancia (alfa) será de 0.05
+
+CALCULOS
+```{r, echo=TRUE}
+rangos <- rank(x = c(Aleacion1,Aleacion2), ties.method = "average")
+rangos_A1 <- rangos[1:8]
+rangos_A2 <- rangos[9:18]
+W <- sum(rangos_A1)
+```
+
+W se puede aproximar a una distribucion normal porque ambas muestras son mayor a 7
+```{r, echo=TRUE}
+media_W <- (1/2) * (n1*(n1+n2+1))
+sd_W <- sqrt((1/12) * (n1*n2*(n1+n2+1)))
+
+valor_p <- pnorm(q = W-0.5, mean = media_W, sd = sd_W, lower.tail = F)*2
+cat("valor-p:", valor_p)
+```
+***Con una significancia de 0.05, podemos afirmar que las muestras provienen de distintas poblaciones, es decir, las poblaciones no son identicas.***
+
+## Problema 2
+Un profesor de psicología tiene 2 clases, se toma una muestra aleatoria de la clase de la
+mañana de 9 estudiantes y otra en la tarde de 12 estudiantes. En un examen común a
+todos ellos, las notas fueron las que se recoge en la tabla de abajo. ¿Se puede concluir
+al nivel de significancia de 0.05 que la clase de la mañana es peor que la clase de la
+tarde? ¿Qué puede concluir con el nivel de significancia dado?
+```{r, echo=TRUE}
+Clase_matinal <- c(73, 87, 79, 75, 82, 66, 95, 75, 70)
+n1 <- length(Clase_matinal)
+Clase_vesp <- c(86, 81, 84, 88, 90, 85, 84, 92, 83, 91, 53, 84)
+n2 <- length(Clase_vesp)
+```
+Debido a que las muestras son independientes y de diferente tamaño, se usará una prueba de Mann Whitney Wilcoxon.
+
+Comprobando supuestos
+```{r, echo=TRUE}
+hist(Clase_matinal)
+hist(Clase_vesp)
+qqnorm(Clase_matinal)
+qqnorm(Clase_vesp)
+
+cat("Coeficiente de asimetria Clase matinal:", skewness(Clase_matinal), "\n",
+    "Coeficiente de Curtosis Clase matinal:", kurtosis(Clase_matinal))
+cat("Coeficiente de asimetria Clase vespetina:", skewness(Clase_vesp), "\n",
+    "Coeficiente de Curtosis Clase vespertina:", kurtosis(Clase_vesp))
+```
+
+Las muestras no parecen tener una forma idéntica por lo que no podemos hablar de medianas. Por esta razón las Hipótesis quedarán de la siguiente manera:
+
+HIPOTESIS:
+  * H0: La clase matinal es igual o mejor que la clase vespertina.
+  * Ha: La clase matinal es peor que la clase vespertina.
+
+Nuestro nivel de significancia (alfa) será de 0.05
+
+CALCULOS
+```{r, echo=TRUE}
+rangos <- rank(c(Clase_matinal,Clase_vesp), ties.method = "average")
+rangos_CM <- rangos[1:9]
+rangos_CV <- rangos[10:21]
+W <- sum(rangos_CM)
+
+# W se puede aproximar a una distribucion normal porque ambas muestras son mayor a 7
+mean_W <- (1/2) * (n1*(n1+n2+1))
+sd_W <- sqrt((1/12) * (n1*n2*(n1+n2+1)))
+
+valor_p <- pnorm(q = W, mean = mean_W, sd = sd_W)
+cat("valor-p:", valor_p)
+```
+***Con una significancia de 0.05 se puede afirmar que la clase matinal es peor que la vespertina.***
+
+## Problema 4
+Una empresa quiere comprar una de las 5 máquinas distintas A, B, C, D, E. En un
+experimento diseñado para saber si hay diferencia en la eficiencia de tales máquinas, 5
+operarios expertos trabajando cada uno con las máquinas un mismo tiempo en cada
+una. Los resultados se recogen en la tabla de abajo, en número de unidades producidas.
+Contrastar la hipótesis de que no hay diferencia significativa entre ellas a nivel de
+significancia a) 0.05 y b) 0.1. Supóngase que las poblaciones tienen la misma forma
+```{r, echo=TRUE}
+A <- c(68,72,77,42,53)
+B <- c(72,53,63,53,48)
+C <- c(60,82,64,75,72)
+D <- c(48,61,57,64,50)
+E <- c(64,65,70,68,53)
+```
+
+Se utilizara una prueba de Kruskal Wallis, pues las muestras son mas de dos e independientes.
+
+HIPOTESIS:
+  * H0: Todas las maquinas son iguales
+  * Ha: Por lo menos una maquina es distinta al resto.
+
+Significancia: 
+  * a) 0.05
+  * b) 0.01
+
+CALCULOS
+```{r, echo=TRUE}
+n1 <- length(A)
+n2 <- length(B)
+n3 <- length(C)
+n4 <- length(D)
+n5 <- length(E)
+rangos <- rank(x = c(A,B,C,D,E), ties.method = "average")
+rangosA <- rangos[1:5]; SumaRangosA <- sum(rangosA)
+rangosB <- rangos[6:10]; SumaRangosB <- sum(rangosB)
+rangosC <- rangos[11:15]; SumaRangosC <- sum(rangosC)
+rangosD <- rangos[16:20]; SumaRangosD <- sum(rangosD)
+rangosE <- rangos[21:25]; SumaRangosE <- sum(rangosE)
+Nt <- n1+n2+n3+n4+n5
+
+H <- (12/(Nt*(Nt+1)))*((SumaRangosA^2+SumaRangosB^2+SumaRangosC^2+SumaRangosD^2+SumaRangosE^2)/n1)-(3*(Nt+1))
+
+valor_p <- pchisq(q = H, df = 4, lower.tail = F)
+valor_p
+```
+***Con una significancia de 0.05 (a) y 0.01 (b), no se tiene suficiente evidencia para afirmar que existe una diferencia significativa entre las maquinas.***
+
+## Problema 5
+Se toman al azar 3 muestras de una población. Al ordenar los datos de acuerdo con el
+rango se obtiene la tabla de abajo. Determine si hay diferencia entre las muestras al
+nivel de significancia a) 0.05 y b) 0.01.
+```{r, echo=TRUE}
+RangosM1 <- c(7,4,6,10,13,16)
+RangosM2 <- c(11,9,12,14,15)
+RangosM3 <- c(5,1,3,8,2,17)
+n1 <- length(RangosM1); n2 <- length(RangosM2)
+n3 <- length(RangosM3)
+```
+
+Se utilizara una prueba de Kruskal Wallis, pues se tienen los rangos de 3 muestras independientes.
+
+HIPOTESIS:
+  * H0: Todas las poblaciones son iduales
+  * Ha: Por lo menos una poblacion es diferente.
+
+Significancia: 
+  * a) 0.05
+  * b) 0.01
+
+```{r, echo=TRUE}
+SumaRangosM1 <- sum(RangosM1)
+SumaRangosM2 <- sum(RangosM2)
+SumaRangosM3 <- sum(RangosM3)
+Nt <- n1+n2+n3
+H <- (12/(Nt*(Nt+1)))*(SumaRangosM1^2/n1 + SumaRangosM2^2/n2 + SumaRangosM3^2/n3)-(3*(Nt+1))
+pvalue <- pchisq(q = H, df = 2, lower.tail = F)
+pvalue
+```
+***Con una significancia de 0.05 (a) y 0.01 (b), no se tiene suficiente evidencia para afirmar que existe una diferencia en por lo menos una de las poblaciones.***
+
+## Problema 6
+Como nuevo gerente de las cuentas de Pox Skin Ointment, debe compara el tiempo que
+les toma a los 3 clientes pagar los envíos de No-Flaw-Face Cream, un nuevo producto
+ofrecido por Pox. Se selecciona aleatoriamente varias compras de cada cliente, junto
+con el número de días que cada uno se tomó en liquidar su cuenta. Los resultados están
+en la tabla de abajo. Determine si hay diferencia en los tiempos que toma a los 3 clientes
+cancelar sus cuentas con Pox (𝛼=0.05). Supóngase las poblaciones tienen la misma
+forma.
+```{r, echo=TRUE}
+Cliente1 <- c(28,19,13,28,29,22,21)
+Cliente2 <- c(26,20,11,14,22,21)
+Cliente3 <- c(37,28,26,35,31)
+n1 <- length(Cliente1); n2 <- length(Cliente2)
+n3 <- length(Cliente3)
+```
+Se utilizara una prueba de Kruskal Wallis pues las muestras son indepenientes.
+
+HIPOTESIS:
+  * H0: El tiempo de los 3 clientes es el mismo
+  * Ha: Por lo menos un cliente tiene tiempo distinto
+
+Significancia 0.05
+
+CALCULOS
+```{r, echo=TRUE}
+rangos <- rank(x = c(Cliente1,Cliente2,Cliente3))
+rangosCliente1 <- rangos[1:7]; SumaRangosCliente1 <- sum(rangosCliente1)
+rangosCliente2 <- rangos[8:13]; SumaRangosCliente2 <- sum(rangosCliente2)
+rangosCliente3 <- rangos[14:18]; SumaRangosCliente3 <- sum(rangosCliente3)
+Nt <- n1+n2+n3
+
+H <- (12/(Nt*(Nt+1)))*(SumaRangosCliente1^2/n1 + SumaRangosCliente2^2/n2 + SumaRangosCliente3^2/n3)-(3*(Nt+1))
+pvalue <- pchisq(q = H, df = 2, lower.tail = F)
+pvalue
+```
+
+***Con una significancia de 0.05, podemos concluir que existe una diferencia significativa en el tiempo de por lo menos uno de los clientes.***
+
+## Problema 7
+En la tabla de abajo, se muestra cómo fueron calificados 10 estudiantes de un curso de
+Biología, según rango, ordenados por letra alfabética, en un laboratorio y en teoría.
+Hallar el coeficiente de correlación de rango y determine si existe relación entre las
+calificaciones del laboratorio y de la teoría en el curso de Biología (𝛼=0.05).
+```{r, echo=TRUE}
+Laboratorio <- c(8,3,9,2,7,10,4,6,1,5)
+Teoria <- c(9,5,10,1,8,7,3,4,2,6)
+```
+Se hara una prueba de correlacion de rangos para verificar si existe una relacion entre las calificaciones del laboratorio con la teoria.
+
+Parametro de interes: Rho s (Coeficiente de correlacion pob.)
+
+HIPOTESIS
+  * H0: Rho == 0
+  * Ha: Rho != 0
+
+Significancia: 0.05
+
+CALCULOS
+```{r, echo=TRUE}
+Rs_num <-  sum((Laboratorio-mean(Laboratorio))*(Teoria-mean(Teoria)))
+Rs_denom <- sqrt(sum((Laboratorio-mean(Laboratorio))^2)*sum((Teoria-mean(Teoria))^2))
+Rs <- Rs_num/Rs_denom
+SD_Rs <- sqrt(1/9)
+
+pvalue <- 2*pnorm(q = Rs, mean = 0, sd = SD_Rs, lower.tail = F)
+pvalue
+```
+
+***Con una significancia de 0.05, podemos afirmar que si hay una correlacion entre calificaciones de Laboratorio con Teoria.***
+
+## Problema 8
+En la tabla aparecen las alturas de una muestra de 12 padres y sus hijos mayores. Hallar
+el coeficiente de correlación de rangos y determinar si existe relación ente las alturas de
+padre e hijo mayor (𝛼=0.05).
+```{r, echo=TRUE}
+Padre <- c(65,63,67,64,68,62,70,66,68,67,69,71)
+Hijo <- c(68,66,68,65,69,66,68,65,71,67,68,70)
+rangosPadre <- rank(Padre)
+rangosHijo <- rank(Hijo)
+```
+
+Se hara una prueba de correlacion de rangos para comprobar si hay relacion de estatura entre padre e hijo.
+
+Parametro de interes: Rho s (Coef. de correlacion Pob.)
+
+HIPOTESIS:
+  * H0: Rho == 0
+  * Ha: Rho != 0
+
+Significancia: 0.05
+
+CALCULOS
+```{r, echo=TRUE}
+Rs_num <-  sum((rangosPadre-mean(rangosPadre))*(rangosHijo-mean(rangosHijo)))
+Rs_denom <- sqrt(sum((rangosPadre-mean(rangosPadre))^2)*sum((rangosHijo-mean(rangosHijo))^2))
+Rs <- Rs_num/Rs_denom
+SD_Rs <- sqrt(1/11)
+
+pvalue <- 2*pnorm(q = Rs, mean = 0, sd = SD_Rs, lower.tail = F)
+pvalue
+```
+
+***Con una significancia de 0.05, podemos afirmar que existe una relacion entre las estaturas de los padres con la de los hijos mayores.***
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
